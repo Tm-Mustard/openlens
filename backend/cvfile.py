@@ -86,7 +86,7 @@ def process_image(
 
     return {
         "status": "ok",
-        "image_bytes": encode_as_jpeg(img),  # <-- CHANGE: was image_bytes
+        "image_bytes": encode_as_jpeg(img),  
         "blur_score": blur_score,
         "mean_brightness": brightness,
         "contrast_score": contrast,
