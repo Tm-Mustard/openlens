@@ -7,7 +7,6 @@ from lensai import ask_question
 
 app = FastAPI()
 
-# In-memory status tracker (document_id -> result dict)
 document_status: dict[str, dict] = {}
 
 origins = [
@@ -80,7 +79,6 @@ async def process_img(request: Request):
     if not document_id:
         raise HTTPException(status_code=400, detail="document_id is required")
 
-    # Kick off background extraction and return immediately
     document_status[document_id] = {"status": "processing"}
     asyncio.create_task(_run_extraction_bg(image_path, model_name, document_id, user_id))
 
@@ -116,7 +114,6 @@ async def _run_extraction_bg(image_path: str, model_name: str, document_id: str,
         result = await run_extraction(image_path, model_name, document_id, user_id)
         document_status[document_id] = result
     except Exception as e:
-        # CRITICAL FIX: If the background task crashes, update status so frontend stops polling
         document_status[document_id] = {
             "status": "extraction_failed",
             "message": f"Background task crashed: {str(e)}"
