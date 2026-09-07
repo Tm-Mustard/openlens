@@ -6,7 +6,6 @@ from clients import gemini_keys, gemini_key_cycle
 PROMPT = """Extract all fields from this document and return ONLY valid JSON.
 Structure: {"document_quality": "clear|partial|unreadable", "fields": {...extracted key-value pairs...}, "field_confidences": {...same keys, confidence 0-1...}}"""
 
-
 def run(image_bytes: bytes):
     parsed = None
     last_error = None
@@ -28,12 +27,7 @@ def run(image_bytes: bytes):
                 ],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
-                    # CRITICAL FIX: document/ID scans (passports, marksheets,
-                    # forms with photos/personal info) can trip Gemini's
-                    # default safety thresholds and get blocked with no
-                    # candidates returned. Loosen the 4 adjustable
-                    # categories to cut down false-positive blocks. Some
-                    # core protections (e.g. CSAM) are never adjustable.
+                   
                     safety_settings=[
                         types.SafetySetting(
                             category="HARM_CATEGORY_HARASSMENT",
@@ -55,11 +49,6 @@ def run(image_bytes: bytes):
                 )
             )
 
-            # CRITICAL FIX: check for a safety-blocked/empty response BEFORE
-            # touching response.text, since accessing .text when candidates
-            # is None raises "'NoneType' object is not subscriptable"
-            # instead of a clear error. This happens often on ID/passport
-            # style documents that trip Gemini's safety filters.
             if not response.candidates:
                 block_reason = None
                 if getattr(response, "prompt_feedback", None):
@@ -77,7 +66,6 @@ def run(image_bytes: bytes):
 
             parsed = json.loads(raw_text)
 
-            # CRITICAL FIX: Ensure parsed is a dict, not None or a list/string
             if not isinstance(parsed, dict):
                 last_error = Exception(f"Gemini returned non-dict JSON: {parsed}")
                 parsed = None
